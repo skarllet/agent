@@ -28,7 +28,7 @@ describe('Agent', () => {
 
     const createTestStepThatDoesntThrowAnError = (eventA, eventB, ...startArguments) => {
       test('Should not call the error event when running the step', done => {
-        const { start, on } = agent.create({ DEBUG: true })
+        const { run, on } = agent.create({ DEBUG: true })
         const errorCallback = jest.fn()
         const startCallback = jest.fn()
 
@@ -42,7 +42,7 @@ describe('Agent', () => {
           done()
         })
 
-        start(...startArguments)
+        run(...startArguments)
       })
     }
 
