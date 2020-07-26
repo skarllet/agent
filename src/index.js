@@ -21,6 +21,7 @@ const create = ({ DEBUG } = { DEBUG: false }) => {
     let parsed = null
     let config = null
 
+    // Template strings parse phase
     try {
       if (DEBUG)
         emmit('DEBUG:START_PARSING_TEMPLATE_STRINGS')

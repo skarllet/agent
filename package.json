@@ -20,5 +20,11 @@
   "homepage": "https://github.com/skarllet/agent#readme",
   "devDependencies": {
     "jest": "^26.1.0"
+  },
+  "dependencies": {
+    "@skarllet/events": "^1.0.1",
+    "@skarllet/queue": "^1.2.0",
+    "@skarllet/state-machine": "^1.1.0",
+    "js-yaml": "^3.14.0"
   }
 }
