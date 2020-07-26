@@ -4,7 +4,8 @@ const events = require('@skarllet/events')
 const states = require('@skarllet/state-machine')
 
 // Imports local logic
-const parseTemplateString = require('./parsers/template');
+const parseYamlString = require('./parsers/yaml')
+const parseTemplateString = require('./parsers/template')
 
 const create = ({ DEBUG } = { DEBUG: false }) => {
   const q = queue.create()
@@ -17,7 +18,7 @@ const create = ({ DEBUG } = { DEBUG: false }) => {
   s.on('*', ({ event, payload }) => emmit(event, payload))
 
   // This function boostraps all
-  const run = async (yaml = null, json = '') => {
+  const run = async (yaml = null, json = '{}') => {
     let parsed = null
     let config = null
 
@@ -30,6 +31,20 @@ const create = ({ DEBUG } = { DEBUG: false }) => {
 
       if (DEBUG)
         emmit('DEBUG:FINISHED_PARSING_TEMPLATE_STRINGS')
+    } catch (error) {
+      emmit('error', error)
+      throw error
+    }
+
+    // YAML config file parse phase
+    try {
+      if (DEBUG)
+        emmit('DEBUG:START_PARSING_YAML')
+
+      config = parseYamlString(parsed)
+
+      if (DEBUG)
+        emmit('DEBUG:FINISHED_PARSING_YAML')
     } catch (error) {
       emmit('error', error)
       throw error
