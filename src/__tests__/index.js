@@ -56,9 +56,10 @@ describe('Agent', () => {
 
           states:
           - state: 'foo'
-          actions:
-          - action: 'foo'
-          url: {{ google.url }}
+            actions:
+            - action: 'agent:emmit'
+              event: 'url'
+              payload: {{ google.url }}
         `
 
         const json = `
@@ -87,8 +88,8 @@ describe('Agent', () => {
           states:
             - state: 'foo'
               actions:
-                - action: 'foo'
-                  url: 'http://www.google.com.br'
+                - action: 'agent:emmit'
+                  event: 'foo'
         `
 
         createTestStepThatDoesntThrowAnError(
@@ -108,8 +109,8 @@ describe('Agent', () => {
           states:
             - state: 'foo'
               actions:
-                - action: 'foo'
-                  url: 'http://www.google.com.br'
+                - action: 'agent:emmit'
+                  event: 'foo'
         `
 
         createTestStepThatDoesntThrowAnError(
@@ -128,20 +129,38 @@ describe('Agent', () => {
           states:
             - state: 'foo'
               actions:
-                - action: 'foo'
-                  url: 'http://www.google.com.br'
+                - action: 'agent:emmit'
+                  event: 'foo'
         `
 
         createTestStepThatDoesntThrowAnError(
-          'DEBUG:START_PARSING_EVENTS',
-          'DEBUG:FINISHED_PARSING_EVENTS',
+          'DEBUG:START_INITIALIZING_QUEUE_EVENTS',
+          'DEBUG:FINISHED_INITIALIZING_QUEUE_EVENTS',
           yaml
         )
       })
 
-      // describe('Tests the complete initialization', () => {
+      describe('Tests a complete initialization', () => {
+        test('should recieve an start event after the succefully start', done => {
+          const { run, on } = agent.create({ DEBUG: true })
 
-      // })
+          const yaml = `
+            name: 'Test'
+
+            start: 'foo'
+
+            states:
+              - state: 'foo'
+                actions:
+                  - action: 'agent:emmit'
+                    event: 'foo'
+          `
+
+          on('started', () => done())
+
+          run(yaml)
+        })
+      })
     })
   }) 
 })
