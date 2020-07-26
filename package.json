@@ -25,6 +25,7 @@
     "@skarllet/events": "^1.0.1",
     "@skarllet/queue": "^1.2.0",
     "@skarllet/state-machine": "^1.1.0",
-    "js-yaml": "^3.14.0"
+    "js-yaml": "^3.14.0",
+    "puppeteer": "^5.2.1"
   }
 }

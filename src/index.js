@@ -9,7 +9,9 @@ const parseYamlString = require('./parsers/yaml')
 const parseTemplateString = require('./parsers/template')
 
 // Actions
+const utilsActions = require('./actions/utils')
 const eventsActions = require('./actions/events')
+const browserActions = require('./actions/browser')
 const stateMachineActions = require('./actions/statemachine')
 
 const create = ({ DEBUG } = { DEBUG: false }) => {
@@ -79,6 +81,9 @@ const create = ({ DEBUG } = { DEBUG: false }) => {
     try {
       debug('DEBUG:START_INITIALIZING_QUEUE_EVENTS')
 
+      q.register(await utilsActions.create())
+      q.register(await browserActions.create())
+
       q.register(await eventsActions.create(e))
       q.register(await stateMachineActions.create(s))
 
@@ -88,6 +93,7 @@ const create = ({ DEBUG } = { DEBUG: false }) => {
       throw error
     }
 
+    // Start the execution of the Agent
     s.change(config.start)
     q.start()
 
