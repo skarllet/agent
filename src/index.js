@@ -21,10 +21,19 @@ const create = ({ DEBUG } = { DEBUG: false }) => {
 
   // Pipe all events from the queue and state machine to
   // the Agent event emmiter
-  q.on('*', ({ event, payload }) => e.emmit(event, payload))
-  s.on('*', ({ event, payload }) => e.emmit(event, payload))
+  q.on('*', (payload, event) => e.emmit(event, payload))
+  s.on('*', (payload, event) => e.emmit(event, payload))
 
-  const debug = event => DEBUG && e.emmit(event)
+  const phase = async (name, handler) => {
+    const debug = event => DEBUG && e.emmit(event)
+    try {
+      debug(`DEBUG:START_${name}`)
+      await handler()
+      debug(`DEBUG:FINISHED_${name}`)
+    } catch (error) {
+      e.emmit('error', error)
+    }
+  }
 
   // This function runs the agent
   const run = async (yaml = null, json = '{}') => {
@@ -32,34 +41,17 @@ const create = ({ DEBUG } = { DEBUG: false }) => {
     let config = null
 
     // Template strings parse phase
-    try {
-      debug('DEBUG:START_PARSING_TEMPLATE_STRINGS')
-
+    await phase('PARSING_TEMPLATE_STRINGS', async () => {
       parsed = parseTemplateString(yaml, JSON.parse(json))
-
-      debug('DEBUG:FINISHED_PARSING_TEMPLATE_STRINGS')
-    } catch (error) {
-      e.emmit('error', error)
-      throw error
-    }
+    })
 
     // YAML config file parse phase
-    try {
-      debug('DEBUG:START_PARSING_YAML')
-
+    await phase('PARSING_YAML', async () => {
       config = parseYamlString(parsed)
-
-      debug('DEBUG:FINISHED_PARSING_YAML')
-    } catch (error) {
-      e.emmit('error', error)
-      throw error
-    }
+    })
 
     // Register states & actions phase
-    try {
-      debug('DEBUG:START_PARSING_STATES')
-
-      // Registers all the states
+    await phase('PARSING_STATES', async () => {
       for (const { state, actions } of config.states) {
         s.add(state, () => {
           // Clear the query to register fresh events
@@ -70,34 +62,21 @@ const create = ({ DEBUG } = { DEBUG: false }) => {
             q.push(action, payload)
         })
       }
-
-      debug('DEBUG:FINISHED_PARSING_STATES')
-    } catch (error) {
-      e.emmit('error', error)
-      throw error
-    }
+    })
 
     // Register events
-    try {
-      debug('DEBUG:START_INITIALIZING_QUEUE_EVENTS')
-
+    await phase('INITIALIZING_QUEUE_EVENTS', async () => {
       q.register(await utilsActions.create())
       q.register(await browserActions.create())
-
       q.register(await eventsActions.create(e))
       q.register(await stateMachineActions.create(s))
+    })
 
-      debug('DEBUG:FINISHED_INITIALIZING_QUEUE_EVENTS')
-    } catch (error) {
-      e.emmit('error', error)
-      throw error
-    }
-
-    // Start the execution of the Agent
-    s.change(config.start)
-    q.start()
-
-    e.emmit('started')
+    await phase('START', async () => {
+      e.emmit('started')
+      s.change(config.start)
+      q.start()
+    })
   }
 
   return {

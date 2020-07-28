@@ -33,8 +33,8 @@ const create = async ({ options = {} } = { options: {} }) => {
   }
 
   const handler = {
-    get(target, key) {
-      if (key === 'then')
+    get(target, key, a) {
+      if (key === 'then' || key === 'catch')
         return target
 
       const action = target[key]

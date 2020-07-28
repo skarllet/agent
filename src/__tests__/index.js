@@ -161,6 +161,50 @@ describe('Agent', () => {
           run(yaml)
         })
       })
+
+      describe('Tests the behavior of puppeteer', () => {
+        // This must have mutch more tests, but, one test is better that none ;)
+
+        test('Should execute browser:close event without throwing an error', done => {
+          expect.assertions(3)
+          const { run, on } = agent.create({ DEBUG: true })
+
+          const errorCallback = jest.fn()
+          const startedCallback = jest.fn()
+          const nextCallBack = jest.fn()
+
+          const yaml = `
+            name: 'Test'
+
+            start: 'initialize'
+
+            states:
+              - state: 'initialize'
+                actions:
+                  - action: 'agent:state:change'
+                    to: 'cleanup'
+
+              - state: 'cleanup'
+                actions:
+                - action: 'browser:close' # this event will dispatch the initialization function and will close the puppeteer browser
+                - action: 'agent:emmit'
+                  event: 'agent:finished'
+          `
+
+          on('error', errorCallback)
+          on('started', startedCallback)
+          on('next', nextCallBack)
+
+          on('agent:finished', () => {
+            expect(startedCallback).toHaveBeenCalled()
+            expect(errorCallback).not.toHaveBeenCalled()
+            expect(nextCallBack).toHaveBeenCalledTimes(3)
+            done()
+          })
+
+          run(yaml)
+        })
+      })
     })
-  }) 
+  })
 })
