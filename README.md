@@ -46,20 +46,20 @@ on('custom_event', () => {
 
 // A YAML file that defines the behavior of the agent
 const yaml = `
-	name: foo # your agent name :P
-	
-	start: 'state:load:google' # the start state of the agent
-	
-	states:
-		- state: 'state:load:google'
-			actions:
-				- action: 'browser:page:url'
-				  url: {{ GOOGLE_URL }} # support for template strings
+  name: foo # your agent name :P
 
-				- action: 'browser:close'
+  start: 'state:load:google' # the start state of the agent
 
-				- action: 'agent:emmit'
-                  event: 'custom_event'
+  states:
+    - state: 'state:load:google'
+      actions:
+        - action: 'browser:page:url'
+          url: {{ GOOGLE_URL }} # support for template strings
+
+        - action: 'browser:close'
+
+        - action: 'agent:emmit'
+          event: 'custom_event'
 `
 
 // A agent supports template strings, to use it properly you need to pass a
