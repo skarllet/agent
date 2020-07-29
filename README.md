@@ -21,27 +21,27 @@ const { run, on } = agent.create() // The create function returns a object with 
 
 // Any error that occours insite the run function will be catched by the error handler
 on('error', () => {
-	// Handles an error
+  // Handles an error
 })
 
 // When a state changes, an 'change' event will be fired
 on('change', () => {
-	// Maybe log something
+  // Maybe log something
 })
 
 // When a action is starting to be executed a next event will be fired
 on('next', () => {
-	// Maybe log something
+  // Maybe log something
 })
 
 // When the agent starts running the started event will be fired
 on('started', () => {
-	// Maybe log something
+  // Maybe log something
 })
 
 // A custom event emmited by the agent, defined by the user
 on('custom_event', () => {
-	// Maybe do something
+  // Maybe do something
 })
 
 // A YAML file that defines the behavior of the agent
@@ -65,7 +65,7 @@ const yaml = `
 // A agent supports template strings, to use it properly you need to pass a
 // JSON string containing the variables used inside the YAML file
 const json = {
-	"GOOGLE_URL": "https://www.google.com"
+  "GOOGLE_URL": "https://www.google.com"
 }
 
 // Call the run function that initiates the Agent
