@@ -2,7 +2,7 @@ const puppeteer = require('puppeteer')
 
 const mouse = require('./mouse')
 
-const create = async ({ options = {} } = { options: {} }) => {
+const create = async (options = {}) => {
   let browser = null
   let page = null
 
