@@ -44,32 +44,33 @@ on('custom_event', () => {
   // Maybe do something
 })
 
-// A YAML file that defines the behavior of the agent
-const yaml = `
-  name: foo # your agent name :P
-
-  start: 'state:load:google' # the start state of the agent
-
-  states:
-    - state: 'state:load:google'
+// A instruction object that defines the behavior of the agent
+const instructions = {
+  name: 'foo',
+  start: 'state:load:google',
+  states: [
+    {
+      state: 'state:load:google',
       actions:
-        - action: 'browser:page:url'
-          url: {{ GOOGLE_URL }} # support for template strings
-
-        - action: 'browser:close'
-
-        - action: 'agent:emmit'
-          event: 'custom_event'
-`
-
-// A agent supports template strings, to use it properly you need to pass a
-// JSON string containing the variables used inside the YAML file
-const json = {
-  "GOOGLE_URL": "https://www.google.com"
+        [
+          {
+            action: 'browser:page:url',
+            url: 'https://www.google.com'
+          },
+          {
+            action: 'browser:close'
+          },
+          {
+            action: 'agent:emmit',
+            event: 'custom_event'
+          }
+        ]
+    }
+  ]
 }
 
 // Call the run function that initiates the Agent
-run(yaml, json)
+run(instructions)
   .catch(() => {
     // handle some error that may occour inside and desnt is handled
   })
