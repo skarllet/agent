@@ -1,5 +1,25 @@
 const agent = require('../index');
 
+const createTestStepThatDoesntThrowAnError = (eventA, eventB, ...startArguments) => {
+  test('Should not call the error event when running the step', done => {
+    const { run, on } = agent.create({ DEBUG: true })
+    const errorCallback = jest.fn()
+    const startCallback = jest.fn()
+
+    on('error', errorCallback)
+
+    on(eventA, startCallback)
+
+    on(eventB, () => {
+      expect(errorCallback).not.toHaveBeenCalled()
+      expect(startCallback).toHaveBeenCalled()
+      done()
+    })
+
+    run(...startArguments)
+  })
+}
+
 describe('Agent', () => {
   describe('Tests the exposed return of the module', () => {
     test('should have one propety', () => {
@@ -25,118 +45,53 @@ describe('Agent', () => {
       expect(instance).toHaveProperty('run')
     })
 
-
-    const createTestStepThatDoesntThrowAnError = (eventA, eventB, ...startArguments) => {
-      test('Should not call the error event when running the step', done => {
-        const { run, on } = agent.create({ DEBUG: true })
-        const errorCallback = jest.fn()
-        const startCallback = jest.fn()
-
-        on('error', errorCallback)
-
-        on(eventA, startCallback)
-
-        on(eventB, () => {
-          expect(errorCallback).not.toHaveBeenCalled()
-          expect(startCallback).toHaveBeenCalled()
-          done()
-        })
-
-        run(...startArguments)
-      })
-    }
-
     describe('Tests the `run` function', () => {
 
-      describe('Tests the template string parse step', () => {
-        const yaml = `
-          name: 'Test'
-
-          start: 'foo'
-
-          states:
-          - state: 'foo'
-            actions:
-            - action: 'agent:emmit'
-              event: 'url'
-              payload: {{ google.url }}
-        `
-
-        const json = `
-          {
-            "google": {
-              "url": "http://www.google.com.br"
-            }
-          }
-        `
-
-        createTestStepThatDoesntThrowAnError(
-          'DEBUG:START_PARSING_TEMPLATE_STRINGS',
-          'DEBUG:FINISHED_PARSING_TEMPLATE_STRINGS',
-          yaml,
-          json
-        )
-      })
-
-      describe('Tests the YAML file parse step', () => {
-
-        const yaml = `
-          name: 'Test'
-
-          start: 'foo'
-
-          states:
-            - state: 'foo'
-              actions:
-                - action: 'agent:emmit'
-                  event: 'foo'
-        `
-
-        createTestStepThatDoesntThrowAnError(
-          'DEBUG:START_PARSING_YAML',
-          'DEBUG:FINISHED_PARSING_YAML',
-          yaml
-        )
-
-      })
-
       describe('Tests the states & actions parse step', () => {
-        const yaml = `
-          name: 'Test'
-
-          start: 'foo'
-
-          states:
-            - state: 'foo'
-              actions:
-                - action: 'agent:emmit'
+        const instructions = {
+          name: 'Test',
+          start: 'foo',
+          states: [
+            {
+              state: 'foo',
+              actions: [
+                {
+                  action: 'agent:emmit',
                   event: 'foo'
-        `
+                }
+              ]
+            }
+          ]
+        }
 
         createTestStepThatDoesntThrowAnError(
           'DEBUG:START_PARSING_STATES',
           'DEBUG:FINISHED_PARSING_STATES',
-          yaml
+          instructions
         )
       })
 
       describe('Tests the events initialization', () => {
-        const yaml = `
-          name: 'Test'
-
-          start: 'foo'
-
-          states:
-            - state: 'foo'
-              actions:
-                - action: 'agent:emmit'
+        const isntructions = {
+          name: 'Test',
+          start: 'foo',
+          states: [
+            {
+              state: 'foo',
+              actions: [
+                {
+                  action: 'agent:emmit',
                   event: 'foo'
-        `
+                }
+              ]
+            }
+          ]
+        }
 
         createTestStepThatDoesntThrowAnError(
           'DEBUG:START_INITIALIZING_QUEUE_EVENTS',
           'DEBUG:FINISHED_INITIALIZING_QUEUE_EVENTS',
-          yaml
+          isntructions
         )
       })
 
@@ -144,21 +99,25 @@ describe('Agent', () => {
         test('should recieve an start event after the succefully start', done => {
           const { run, on } = agent.create({ DEBUG: true })
 
-          const yaml = `
-            name: 'Test'
-
-            start: 'foo'
-
-            states:
-              - state: 'foo'
-                actions:
-                  - action: 'agent:emmit'
+          const instructions = {
+            name: 'Test',
+            start: 'foo',
+            states: [
+              {
+                state: 'foo',
+                actions: [
+                  {
+                    action: 'agent:emmit',
                     event: 'foo'
-          `
+                  }
+                ]
+              }
+            ]
+          }
 
           on('started', () => done())
 
-          run(yaml)
+          run(instructions)
         })
       })
 
@@ -173,36 +132,35 @@ describe('Agent', () => {
           const startedCallback = jest.fn()
           const nextCallBack = jest.fn()
 
-          const yaml = `
-            name: 'Test'
-
-            start: 'initialize'
-
+          const instructions = {
+            name: 'Test',
+            start: 'initialize',
             states:
-              - state: 'initialize'
+              [{
+                state: 'initialize',
+                actions: [{ action: 'agent:state:change', to: 'cleanup' }]
+              },
+              {
+                state: 'cleanup',
                 actions:
-                  - action: 'agent:state:change'
-                    to: 'cleanup'
-
-              - state: 'cleanup'
-                actions:
-                - action: 'browser:close' # this event will dispatch the initialization function and will close the puppeteer browser
-                - action: 'agent:emmit'
-                  event: 'agent:finished'
-          `
+                  [{ action: 'browser:close' },
+                  { action: 'agent:emmit', event: 'agent:finished' }]
+              }]
+          }
 
           on('error', errorCallback)
           on('started', startedCallback)
           on('next', nextCallBack)
 
           on('agent:finished', () => {
+            console.log('asdasd')
             expect(startedCallback).toHaveBeenCalled()
             expect(errorCallback).not.toHaveBeenCalled()
             expect(nextCallBack).toHaveBeenCalledTimes(3)
             done()
           })
 
-          run(yaml)
+          run(instructions)
         })
       })
     })

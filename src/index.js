@@ -4,10 +4,6 @@ const events = require('@skarllet/events')
 const states = require('@skarllet/state-machine')
 
 // Imports local logic
-// Parsers
-const parseYamlString = require('./parsers/yaml')
-const parseTemplateString = require('./parsers/template')
-
 // Actions
 const utilsActions = require('./actions/utils')
 const eventsActions = require('./actions/events')
@@ -36,23 +32,10 @@ const create = ({ DEBUG } = { DEBUG: false }) => {
   }
 
   // This function runs the agent
-  const run = async (yaml = null, json = '{}') => {
-    let parsed = null
-    let config = null
-
-    // Template strings parse phase
-    await phase('PARSING_TEMPLATE_STRINGS', async () => {
-      parsed = parseTemplateString(yaml, JSON.parse(json))
-    })
-
-    // YAML config file parse phase
-    await phase('PARSING_YAML', async () => {
-      config = parseYamlString(parsed)
-    })
-
+  const run = async (instructions = null) => {
     // Register states & actions phase
     await phase('PARSING_STATES', async () => {
-      for (const { state, actions } of config.states) {
+      for (const { state, actions } of instructions.states) {
         s.add(state, () => {
           // Clear the query to register fresh events
           q.clear()
@@ -77,7 +60,7 @@ const create = ({ DEBUG } = { DEBUG: false }) => {
 
     await phase('START', async () => {
       e.emmit('started')
-      s.change(config.start)
+      s.change(instructions.start)
       q.start()
     })
   }
