@@ -67,7 +67,10 @@ const create = ({ DEBUG } = { DEBUG: false }) => {
     // Register events
     await phase('INITIALIZING_QUEUE_EVENTS', async () => {
       q.register(await utilsActions.create())
-      q.register(await browserActions.create())
+      q.register(await browserActions.create({
+        headless: true,
+        args: ['--no-sandbox']
+      }))
       q.register(await eventsActions.create(e))
       q.register(await stateMachineActions.create(s))
     })
