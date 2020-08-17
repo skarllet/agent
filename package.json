@@ -24,7 +24,7 @@
   "dependencies": {
     "@skarllet/events": "^2.0.0",
     "@skarllet/queue": "^1.3.0",
-    "@skarllet/state-machine": "^1.1.0",
+    "@skarllet/state-machine": "^1.1.2",
     "puppeteer": "^5.2.1"
   }
 }
