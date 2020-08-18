@@ -153,7 +153,6 @@ describe('Agent', () => {
           on('next', nextCallBack)
 
           on('agent:finished', () => {
-            console.log('asdasd')
             expect(startedCallback).toHaveBeenCalled()
             expect(errorCallback).not.toHaveBeenCalled()
             expect(nextCallBack).toHaveBeenCalledTimes(3)
