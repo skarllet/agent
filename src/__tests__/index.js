@@ -1,3 +1,4 @@
+const path = require('path')
 const agent = require('../index')
 
 const createTestStepThatDoesntThrowAnError = (eventA, eventB, ...startArguments) => {
@@ -186,7 +187,7 @@ describe('Agent', () => {
 
             plugins: [
               {
-                module: 'C:\\Users\\U002997\\Desktop\\Personal\\agent\\src\\__tests__\\mock\\plugin',
+                module: path.join(__dirname, './mock/plugin'),
                 config: {}
               }
             ],
