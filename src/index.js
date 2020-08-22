@@ -1,73 +1,79 @@
 // Imports @skarllet modules
-const queue = require('@skarllet/queue')
-const events = require('@skarllet/events')
-const states = require('@skarllet/state-machine')
+const plugins = require('@skarllet/plugins')
+const modules = require('./modules')
 
-// Imports local logic
-// Actions
-const utilsActions = require('./actions/utils')
-const eventsActions = require('./actions/events')
-const browserActions = require('./actions/browser')
-const stateMachineActions = require('./actions/statemachine')
+const create = async ({ DEBUG } = { DEBUG: false }) => {
+  const plugin = plugins.create()
 
-const create = ({ DEBUG } = { DEBUG: false }) => {
-  const q = queue.create()
-  const s = states.create()
-  const e = events.create()
+  // Initialize all default plugins
+  await plugin.register(require('./plugins/actions'))
+  await plugin.register(require('./plugins/events'))
+  await plugin.register(require('./plugins/queue'))
+  await plugin.register(require('./plugins/state'))
 
-  // Pipe all events from the queue and state machine to
-  // the Agent event emmiter
-  q.on('*', (payload, event) => e.emmit(event, payload))
-  s.on('*', (payload, event) => e.emmit(event, payload))
+  // Access all needed plugins
+  const queue = plugin.use('queue')
+  const state = plugin.use('state')
+  const events = plugin.use('events')
 
+  // A phase is something that helps debugging in witch stage
+  // the execution broke, if it broke
   const phase = async (name, handler) => {
-    const debug = event => DEBUG && e.emmit(event)
+    const debug = event => DEBUG && events.emmit(event)
+
     try {
       debug(`DEBUG:START_${name}`)
       await handler()
       debug(`DEBUG:FINISHED_${name}`)
     } catch (error) {
-      e.emmit('error', error)
+      events.emmit('error', error)
+      events.emmit('finish', error)
     }
   }
 
-  // This function runs the agent
+  // The run function interprets and execute the instruction object,
+  // initializes all data and populate the plugins with the data needed.
   const run = async (instructions = null) => {
+    // Register plugins
+    await phase('INITIALIZING_PLUGINS', async () => {
+      const { plugins = [] } = instructions
+
+      for (const { module, config } of plugins) {
+        // Install a module with NPM
+        const { name, version } = await modules.install(module)
+
+        plugin.register(modules.require(name), config)
+
+        events.emmit('installed', { name, version })
+      }
+    })
+
     // Register states & actions phase
     await phase('PARSING_STATES', async () => {
-      for (const { state, actions } of instructions.states) {
-        s.add(state, () => {
+      const { states = [] } = instructions
+
+      for (const { state: stateName, actions } of states) {
+        state.add(stateName, () => {
           // Clear the query to register fresh events
-          q.clear()
+          queue.clear()
 
           // Adds the events
           for (const { action, ...payload } of actions)
-            q.push(action, payload)
+            queue.push({ action, payload })
         })
       }
     })
 
-    // Register events
-    await phase('INITIALIZING_QUEUE_EVENTS', async () => {
-      q.register(await utilsActions.create())
-      q.register(await browserActions.create({
-        headless: true,
-        args: ['--no-sandbox']
-      }))
-      q.register(await eventsActions.create(e))
-      q.register(await stateMachineActions.create(s))
-    })
-
     await phase('START', async () => {
-      e.emmit('started')
-      s.change(instructions.start)
-      q.start()
+      events.emmit('started')
+      state.change(instructions.start)
+      queue.start()
     })
   }
 
   return {
     run,
-    on: e.on
+    on: events.on
   }
 }
 

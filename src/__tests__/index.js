@@ -1,8 +1,8 @@
-const agent = require('../index');
+const agent = require('../index')
 
 const createTestStepThatDoesntThrowAnError = (eventA, eventB, ...startArguments) => {
-  test('Should not call the error event when running the step', done => {
-    const { run, on } = agent.create({ DEBUG: true })
+  test('Should not call the error event when running the step', async done => {
+    const { run, on } = await agent.create({ DEBUG: true })
     const errorCallback = jest.fn()
     const startCallback = jest.fn()
 
@@ -32,20 +32,38 @@ describe('Agent', () => {
   })
 
   describe('Tests the `creation` phase', () => {
-    // This phase should initiate all the base systems
-
-    test('should have two propeties', () => {
-      const instance = agent.create()
+    test('should have the `run` and `on` propeties', async () => {
+      const instance = await agent.create()
+      expect(instance).toHaveProperty('on')
+      expect(instance).toHaveProperty('run')
       expect(Object.entries(instance).length).toBe(2)
     })
 
-    test('should have the `run` and `on` propeties', () => {
-      const instance = agent.create()
-      expect(instance).toHaveProperty('on')
-      expect(instance).toHaveProperty('run')
-    })
-
     describe('Tests the `run` function', () => {
+      describe('Tests the plugins initialization', () => {
+        const isntructions = {
+          name: 'Test',
+          start: 'foo',
+          states: [
+            {
+              state: 'foo',
+              actions: [
+                {
+                  action: 'agent:event:emmit',
+                  event: 'foo'
+                }
+              ]
+            }
+          ]
+        }
+
+        createTestStepThatDoesntThrowAnError(
+          'DEBUG:START_INITIALIZING_PLUGINS',
+          'DEBUG:FINISHED_INITIALIZING_PLUGINS',
+          isntructions
+        )
+      })
+
 
       describe('Tests the states & actions parse step', () => {
         const instructions = {
@@ -56,7 +74,7 @@ describe('Agent', () => {
               state: 'foo',
               actions: [
                 {
-                  action: 'agent:emmit',
+                  action: 'agent:event:emmit',
                   event: 'foo'
                 }
               ]
@@ -71,33 +89,9 @@ describe('Agent', () => {
         )
       })
 
-      describe('Tests the events initialization', () => {
-        const isntructions = {
-          name: 'Test',
-          start: 'foo',
-          states: [
-            {
-              state: 'foo',
-              actions: [
-                {
-                  action: 'agent:emmit',
-                  event: 'foo'
-                }
-              ]
-            }
-          ]
-        }
-
-        createTestStepThatDoesntThrowAnError(
-          'DEBUG:START_INITIALIZING_QUEUE_EVENTS',
-          'DEBUG:FINISHED_INITIALIZING_QUEUE_EVENTS',
-          isntructions
-        )
-      })
-
       describe('Tests a complete initialization', () => {
-        test('should recieve an start event after the succefully start', done => {
-          const { run, on } = agent.create({ DEBUG: true })
+        test('should recieve an start event after the succefully start', async done => {
+          const { run, on } = await agent.create({ DEBUG: true })
 
           const instructions = {
             name: 'Test',
@@ -107,7 +101,7 @@ describe('Agent', () => {
                 state: 'foo',
                 actions: [
                   {
-                    action: 'agent:emmit',
+                    action: 'agent:event:emmit',
                     event: 'foo'
                   }
                 ]
@@ -119,43 +113,117 @@ describe('Agent', () => {
 
           run(instructions)
         })
-      })
 
-      describe('Tests the behavior of puppeteer', () => {
-        // This must have mutch more tests, but, one test is better that none ;)
-
-        test('Should execute browser:close event without throwing an error', done => {
+        test('should recieve an finish event after the succefully executes all states and actions', async done => {
           expect.assertions(3)
-          const { run, on } = agent.create({ DEBUG: true })
 
-          const errorCallback = jest.fn()
-          const startedCallback = jest.fn()
-          const nextCallBack = jest.fn()
+          const { run, on } = await agent.create({ DEBUG: true })
+
+          const fooHandler = jest.fn()
+          const nextHandler = jest.fn()
+          const changeHandler = jest.fn()
 
           const instructions = {
             name: 'Test',
-            start: 'initialize',
-            states:
-              [{
-                state: 'initialize',
-                actions: [{ action: 'agent:state:change', to: 'cleanup' }]
+            start: 'foo',
+            states: [
+              {
+                state: 'foo',
+                actions: [
+                  {
+                    action: 'agent:event:emmit',
+                    event: 'foo'
+                  },
+                  {
+                    action: 'agent:state:change',
+                    to: 'bar'
+                  }
+                ]
               },
               {
-                state: 'cleanup',
-                actions:
-                  [{ action: 'browser:close' },
-                  { action: 'agent:emmit', event: 'agent:finished' }]
-              }]
+                state: 'bar',
+                actions: [
+                  {
+                    action: 'agent:event:emmit',
+                    event: 'foo'
+                  }
+                ]
+              }
+            ]
           }
 
-          on('error', errorCallback)
+          on('foo', fooHandler)
+          on('next', nextHandler)
+          on('change', changeHandler)
+
+          on('finish', () => {
+            expect(fooHandler).toHaveBeenCalledTimes(2)
+            expect(nextHandler).toHaveBeenCalledTimes(3)
+            expect(changeHandler).toHaveBeenCalledTimes(2)
+            done()
+          })
+
+          run(instructions)
+        })
+      })
+
+      describe('Tests the behavior of the dynamic plugin import', () => {
+        test('Should install and register @someone/dummy-plugin without throwing an error', async done => {
+          expect.assertions(5)
+
+          const { run, on } = await agent.create({ DEBUG: true })
+
+          const startedCallback = jest.fn()
+          const changeCallBack = jest.fn()
+          const errorCallback = jest.fn()
+          const nextCallBack = jest.fn()
+          const pluginInstalledCallback = jest.fn()
+
+          const instructions = {
+            name: 'facking agent ;)',
+
+            start: 'initialize',
+
+            plugins: [
+              {
+                module: 'C:\\Users\\U002997\\Desktop\\Personal\\agent\\src\\__tests__\\mock\\plugin',
+                config: {}
+              }
+            ],
+
+            states: [
+              {
+                state: 'initialize',
+                actions: [
+                  {
+                    action: 'agent:event:emmit',
+                    event: 'foo'
+                  }
+                ]
+              }
+            ]
+          }
+
           on('started', startedCallback)
+
+          on('installed', pluginInstalledCallback)
+
+          on('change', changeCallBack)
           on('next', nextCallBack)
 
-          on('agent:finished', () => {
+          on('error', errorCallback)
+          on('error', console.log)
+
+          on('finish', () => {
             expect(startedCallback).toHaveBeenCalled()
+
+            expect(pluginInstalledCallback).toHaveBeenCalledTimes(1)
+
+            expect(changeCallBack).toHaveBeenCalledTimes(1)
+            expect(nextCallBack).toHaveBeenCalledTimes(1)
+
             expect(errorCallback).not.toHaveBeenCalled()
-            expect(nextCallBack).toHaveBeenCalledTimes(3)
+
             done()
           })
 
