@@ -20,8 +20,6 @@ module.exports = {
     const { stdout } = await promisify(exec)(`npm i ${ module }`, { cwd: directory })
     const [ string ] = stdout.match(packageNameRegex)
 
-    console.log(string, stdout)
-
     return { 
       name: string.substring(0, string.lastIndexOf('@')), 
       version: string.substring(string.lastIndexOf('@') + 1, string.length + 1)
