@@ -1,17 +1,26 @@
 const name = 'actions'
 
-const setup = () => {
+const setup = plugin => {
   const actions = {}
 
   const register = (name, handler) => actions[name] = handler
 
-  const execute = (name, payload) => actions[name](payload)
+  const dispatch = async (action, payload) => {
+    const events = plugin.use('events')
+
+    events.emmit('action:dispatch', { action, payload })
+
+    try {
+      return await actions[action](payload)
+    } catch (error) {
+      throw { type: 'action', where: action, error }
+    }
+  }
 
   return {
     register,
-    execute,
+    dispatch,
   }
 }
-
 
 module.exports = { name, setup }

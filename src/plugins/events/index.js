@@ -1,17 +1,36 @@
 const name = 'events'
 
-const setup = plugin => {
-  // Uses the actions plugin
-  const actions = plugin.use('actions')
+const setup = () => {
+  const events = {};
 
-  // Create
-  const events = require('@skarllet/events').create()
+  const callEventHandlers = (event, payload, replace = null) => {
+    if (events[replace || event])
+      for (const handler of events[replace || event])
+        handler(payload, event)
+  }
 
-  // Register a action to be avaliable to the user
-  actions.register('agent:event:emmit', async ({ event, payload }) => events.emmit(event, payload))
+  const emmit = (event, payload = null) => {
+    callEventHandlers(event, payload)
+    callEventHandlers(event, payload, '*')
+  }
 
-  // Expose the methods to all other plugins
-  return events
+  const remove = (event, handler) => {
+    if (!events[event])
+      return
+
+    events[event] = events[event].filter(h => h !== handler);
+  }
+
+  const on = (event, handler) => {
+    // if the key doesnt exists it create
+    if (!events[event])
+      events[event] = []
+
+    // Adds the event to the 
+    events[event].push(handler)
+  }
+
+  return { emmit, on, remove }
 }
 
 module.exports = { name, setup }

@@ -22,10 +22,7 @@
     "jest": "^26.1.0"
   },
   "dependencies": {
-    "@skarllet/events": "^2.0.0",
-    "@skarllet/plugins": "^1.1.0",
-    "@skarllet/queue": "^2.0.0",
-    "@skarllet/state-machine": "^1.1.2"
+    "@skarllet/plugins": "^1.1.0"
   },
   "jest": {
     "modulePathIgnorePatterns": [
