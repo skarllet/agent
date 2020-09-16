@@ -41,7 +41,7 @@ describe('states plugin', () => {
       sm.register('state:foo', cbA)
       sm.register('state:bar', cbB)
 
-    // Bootstrap the events by changing the first state
+      // Bootstrap the events by changing the first state
       sm.change('state:foo');
 
       expect(cbA).toHaveBeenCalled();
@@ -58,10 +58,30 @@ describe('states plugin', () => {
       sm.register('state:foo', cbA)
       sm.register('state:bar', cbB)
 
-    // Bootstrap the events by changing the first state
+      // Bootstrap the events by changing the first state
       sm.change('state:foo');
 
       expect(cbB).toHaveBeenCalled();
+    });
+
+    test('After exec all states should emmit a finish event one time', () => {
+      // setup the State Machine instance,
+      const sm = plugins.use('states');
+      const events = plugins.use('events');
+
+      const cb = jest.fn()
+
+      events.on('state:finish', cb)
+
+      sm.register('state:foo', ({ change }) => change(`state:bar`))
+      sm.register('state:bar', () => {})
+
+      // Bootstrap the events by changing the first state
+      sm
+        .change('state:foo')
+        .then(() => {
+          expect(cb).toHaveBeenCalledTimes(1)
+        });
     });
   });
 });
